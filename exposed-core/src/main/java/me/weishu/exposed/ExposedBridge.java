@@ -120,6 +120,7 @@ public class ExposedBridge {
 //                            param.modulePath = apk;
 //                            param.startsSystemServer = startsSystemServer;
 //                            ((IXposedHookZygoteInit) moduleInstance).initZygote(param);
+                        ((IXposedHookZygoteInit) moduleInstance).initZygote(ExposedHelper.getStartupParam(moduleApkPath, true));
                     }
 
                     if (moduleInstance instanceof IXposedHookLoadPackage) {

@@ -19,6 +19,13 @@ public class ExposedHelper {
         return IXposedMod.class.isAssignableFrom(moduleClass);
     }
 
+    public static IXposedHookZygoteInit.StartupParam getStartupParam(String modulePath, boolean startsSystemServer) {
+        IXposedHookZygoteInit.StartupParam param = new IXposedHookZygoteInit.StartupParam();
+        param.modulePath = modulePath;
+        param.startsSystemServer = startsSystemServer;
+        return param;
+    }
+
     public static void beforeHookedMethod(XC_MethodHook methodHook, XC_MethodHook.MethodHookParam param) throws Throwable {
         methodHook.beforeHookedMethod(param);
     }
