@@ -57,40 +57,11 @@ public class ExposedBridge {
             ? "/data/user_de/0/de.robv.android.xposed.installer/" : BASE_DIR_LEGACY;
 
     private static Pair<String, Set<String>> lastModuleList = Pair.create(null, null);
-    private static Map<ClassLoader, ClassLoader> exposedClassLoaderMap = new HashMap<>();
-    private static ClassLoader xposedClassLoader;
 
     public static void initOnce(Context context, ApplicationInfo applicationInfo, ClassLoader appClassLoader) {
         ExposedHelper.initSeLinux(applicationInfo.processName);
 
         initForXposedInstaller(context, applicationInfo, appClassLoader);
-    }
-
-    public static void patchAppClassLoader(Context baseContext) {
-        final ClassLoader originClassLoader = baseContext.getClassLoader();
-        Object mPackageInfo = XposedHelpers.getObjectField(baseContext, "mPackageInfo");
-        ClassLoader appClassLoaderWithXposed = getAppClassLoaderWithXposed(originClassLoader);
-        XposedHelpers.setObjectField(mPackageInfo, "mClassLoader", appClassLoaderWithXposed);
-        Thread.currentThread().setContextClassLoader(appClassLoaderWithXposed);
-    }
-
-    public static synchronized ClassLoader getAppClassLoaderWithXposed(ClassLoader appClassLoader) {
-        if (exposedClassLoaderMap.containsKey(appClassLoader)) {
-            return exposedClassLoaderMap.get(appClassLoader);
-        } else {
-            ClassLoader hostClassLoader = ExposedBridge.class.getClassLoader();
-            ClassLoader xposedClassLoader = getXposedClassLoader(hostClassLoader);
-            ClassLoader exposedClassLoader = new ComposeClassLoader(xposedClassLoader, appClassLoader);
-            exposedClassLoaderMap.put(appClassLoader, exposedClassLoader);
-            return exposedClassLoader;
-        }
-    }
-
-    public static synchronized ClassLoader getXposedClassLoader(ClassLoader hostClassLoader) {
-        if (xposedClassLoader == null) {
-            xposedClassLoader = new XposedClassLoader(hostClassLoader);
-        }
-        return xposedClassLoader;
     }
 
     public static void loadModule(final String moduleApkPath, String moduleOdexDir, String moduleLibPath,
@@ -114,7 +85,6 @@ public class ExposedBridge {
         }
 
         ClassLoader hostClassLoader = ExposedBridge.class.getClassLoader();
-        ClassLoader appClassLoaderWithXposed = getAppClassLoaderWithXposed(appClassLoader);
 
         ClassLoader mcl = new DexClassLoader(moduleApkPath, moduleOdexDir, moduleLibPath, hostClassLoader);
         InputStream is = mcl.getResourceAsStream("assets/xposed_init");
@@ -160,7 +130,7 @@ public class ExposedBridge {
                         XC_LoadPackage.LoadPackageParam lpparam = new XC_LoadPackage.LoadPackageParam(xc_loadPackageCopyOnWriteSortedSet);
                         lpparam.packageName = currentApplicationInfo.packageName;
                         lpparam.processName = currentApplicationInfo.processName;
-                        lpparam.classLoader = appClassLoaderWithXposed;
+                        lpparam.classLoader = appClassLoader;
                         lpparam.appInfo = currentApplicationInfo;
                         lpparam.isFirstApplication = true;
                         XC_LoadPackage.callAll(lpparam);
